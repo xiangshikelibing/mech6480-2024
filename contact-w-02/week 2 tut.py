@@ -10,10 +10,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from git import Repo
 
-import os
 
-git_path = "/path/to/git"  # Replace with the actual path to your Git executable
-os.environ["PATH"] += os.pathsep + git_path
 
 def poiseuille_flow(miu, dP_dx, dr, num_cells, R):
     
