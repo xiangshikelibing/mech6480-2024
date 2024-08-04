@@ -69,14 +69,7 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ax.annotate(timestamp, xy=(0.7, 0.95), xycoords='figure fraction', annotation_clip=False)
     
-    #ID
-    try:
-        repo = Repo('.', search_parent_directories=True)
-        revsha = repo.head.object.hexsha[:8]
-        ax.annotate(f"[rev {revsha}]", xy=(0.05, 0.95), xycoords='figure fraction', annotation_clip=False)
-    except Exception as e:
-        ax.annotate("[rev unknown]", xy=(0.05, 0.95), xycoords='figure fraction', annotation_clip=False)
-        print(f"Error accessing Git repository: {e}")
+    
 
     
     
