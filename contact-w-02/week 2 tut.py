@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug  5 00:10:27 2024
+Created on Mon Aug  5 00:47:22 2024
 
 @author: 13747
 """
@@ -8,13 +8,11 @@ Created on Mon Aug  5 00:10:27 2024
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-from git import Repo
 
 
-
-def poiseuille_flow(miu, dP_dx, dr, num_cells, R):
+def fvm_solution(miu, dP_dx, num_cells, R):
     
-    # Radial positions 
+    dr = R / num_cells
     r = np.linspace(0.5 * dr, R - 0.5 * dr, num_cells)
 
     A = np.zeros((num_cells, num_cells))
@@ -28,7 +26,6 @@ def poiseuille_flow(miu, dP_dx, dr, num_cells, R):
         A[i, i + 1] = miu * r_N / dr
         b[i] = dP_dx * r[i] * dr
 
-    # Boundary conditions, symmetric
     A[0, 0] = 1
     A[0, 1] = -1
     b[0] = 0
@@ -36,13 +33,14 @@ def poiseuille_flow(miu, dP_dx, dr, num_cells, R):
     A[-1, -1] = 1
     b[-1] = 0
 
-    return A, b, r
+    u_fvm = np.linalg.solve(A, b)
+    return r, u_fvm
 
-def solve_velocity_profile(miu, dP_dx, num_cells, R):
-    dr = R / num_cells
-    A, b, r = poiseuille_flow(miu, dP_dx, dr, num_cells, R)
-    u = np.linalg.solve(A, b)
-    return r, u
+def analytical_solution(x, u, t):
+    
+    
+    rho_0 = lambda x: np.sin(np.pi * x)
+    return rho_0(x - u * t)
 
 if __name__ == "__main__":
     
@@ -51,25 +49,30 @@ if __name__ == "__main__":
     R = 1.0  
     num_cells = 8  
 
-    
-    r, u = solve_velocity_profile(miu, dP_dx, num_cells, R)
+    # Solve for FVM solution
+    r, u_fvm = fvm_solution(miu, dP_dx, num_cells, R)
+
+    # Analytical solution 
+    u_const = 1.0  
+    time = 1.0  
+
+    x_analytical = np.linspace(0, R, 100)
+    rho_analytical = analytical_solution(x_analytical, u_const, time)
 
     
-    
-    plt.figure(figsize=(8, 6))
-    plt.plot(r, u, 'bo-', label='Numerical Solution')
-    plt.xlabel('Radial Position (m)')
-    plt.ylabel('Velocity (m/s)')
-    plt.title('Velocity Profile')
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-    
-    #timestamp
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(r, u_fvm, 'bo-', label='FVM Solution (Numerical)')
+    ax.plot(x_analytical, rho_analytical, 'r-', label='Analytical Solution')
+    ax.set_xlabel('Radial Position (m)')
+    ax.set_ylabel('Velocity (m/s)')
+    ax.set_title('Comparison of FVM and Analytical Solutions')
+    ax.grid(True)
+    ax.legend()
+
+    # timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ax.annotate(timestamp, xy=(0.7, 0.95), xycoords='figure fraction', annotation_clip=False)
-    
-    
 
+   
     
-    
+    plt.show()
