@@ -8,7 +8,8 @@ Created on Mon Aug  5 00:47:22 2024
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-
+import os
+from git import Repo
 
 def fvm_solution(miu, dP_dx, num_cells, R):
     
@@ -74,5 +75,12 @@ if __name__ == "__main__":
     ax.annotate(timestamp, xy=(0.7, 0.95), xycoords='figure fraction', annotation_clip=False)
 
    
-    
+    try:
+        repo = Repo('.', search_parent_directories=True)
+        revsha = repo.head.object.hexsha[:8]
+        ax.annotate(f"[rev {revsha}]", xy=(0.05, 0.95), xycoords='figure fraction', annotation_clip=False)
+    except Exception as e:
+        ax.annotate("[rev unknown]", xy=(0.05, 0.95), xycoords='figure fraction', annotation_clip=False)
+        print(f"Error accessing Git repository: {e}")
+        
     plt.show()
