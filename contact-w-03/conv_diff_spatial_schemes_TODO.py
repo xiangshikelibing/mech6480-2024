@@ -25,9 +25,15 @@ def conv_diff_dirichlet(n, dx, F, D, boundary_left, boundary_right,method="cente
         S_p_left  = (2.0*D + F)
         S_p_right = (2.0*D - F)
     elif method == "upwind":
-        raise NotImplementedError("To do - implement upwind")
+        a_W = D + F
+        a_E = D   
+        S_p_left  = (2.0 * D + F)
+        S_p_right = 2.0 * D 
     elif method == "hybrid":
-        raise NotImplementedError("To do - implement hybrid")
+        a_W = np.max([F, D + 0.5 * F, 0])
+        a_E = np.max([-F, D - 0.5 * F, 0])
+        S_p_left  = (2.0*D + F)
+        S_p_right = 2.0*D 
     else:
         raise NotImplementedError("Method not implemented. Pick one of the following: 'centered', 'upwind', 'hybrid'")
     a_P = a_W + a_E
@@ -44,23 +50,28 @@ def conv_diff_dirichlet(n, dx, F, D, boundary_left, boundary_right,method="cente
     vector_b[-1] = S_p_right * boundary_right
     return (matrix_A, vector_b.T)
 
-def generate_matrix_and_solve(num_cells, dx, F, D, phi_0, phi_L, method = "centered"):
-    raise NotImplementedError("To do - implement matrix system and solve")
+    
 
-def L2_norm(num_cells, x_location, concentration, function):
-    raise NotImplementedError("To do - implement calculation of L2-norm")
+def L2_norm(num_cells, x_locations, concentration, function):
+    L2 = 0 
+    for cell in range(num_cells):
+        L2 = (concentration[cell] - function(x_locations)) **2
+    return np.sqrt(L2/num_cells)
+        
 
-def analytic_solution(x, phi_0, phi_L, rho, u, Gamma):
+#def analytic_solution(x, phi_0, phi_L, rho, u, Gamma):
     return phi_0 + (phi_L - phi_0) * (np.exp(rho*u*x/Gamma)-1) / (np.exp(rho*u*length/Gamma) -1)
 
 if __name__ == "__main__":
     # SYSTEM PARAMETERS:
     Gamma = 0.1             # kg/m.s      
-    u = 0.1                 # m/s
+    u = 2.5                 # m/s
     rho = 1.0               # kg/m3
     length = 1              # m
     phi_0 = 1
     phi_L = 0
+    def analytic_solution(x):
+        return phi_0 + (phi_L - phi_0) * (np.exp(rho*u*x/Gamma)-1) / (np.exp(rho*u*length/Gamma) -1)
     
     # GRID GENERATION
     num_cells = 5              #[-]
@@ -72,13 +83,29 @@ if __name__ == "__main__":
     D = Gamma / dx
     
     # SYSTEM OF EQUATIONS
-    solution_matrix, source_matrix = conv_diff_dirichlet(num_cells, dx, F, D, phi_0, phi_L, method="centered")
-    concentration = np.linalg.solve(solution_matrix, source_matrix)
+    #solution_matrix, source_matrix = conv_diff_dirichlet(num_cells, dx, F, D, phi_0, phi_L, method="centered")
+    #concentration = np.linalg.solve(solution_matrix, source_matrix)
+    
+    concentration = generate_matrix_and_solve(num_cells, dx, F, D, phi_0, phi_L, method = "hybrid")
+    
+    test_resolutions = [5, 8, 16, 32, 64, 128, 512]
+    errors = np.zeros(len(test_resolutions))
+    for indx, res in zip(range(len(test_resolutions)), test_resolutions):
+        dx = length / (res)
+        dx_store[indx] = dx
+        x_locations = np.linspace(0.5 * dx, (res - 0.5)* dx, res)
+        concentration = generate_matrix_and_solve(num_cells, dx, F, D, phi_0, phi_L, method = "hybrid")
+        errors[indx] = L2_norm(num_cells, x_locations, concentration, function)
     
     x = np.linspace(0,length,100)
-    solution = analytic_solution(x, phi_0, phi_L, rho, u, Gamma)
+    solution = analytic_solution(x)
     plt.plot(x, solution, 'r--')
             
     plt.plot(x_locations, concentration, 'b-o')
     plt.xlabel('Distance along hallway (m)')
     plt.ylabel('concentration')
+    
+    fig,ax = plt.subplots(1)
+    ax.plot(dx_store, errors)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
