@@ -34,15 +34,22 @@ def conv_diff_dirichlet(n, dx, F, D, boundary_left, boundary_right,method="cente
         a_E = np.max([-F,D-0.5*F,0])
         S_p_left = (2.0*D + F)
         S_p_right = 2.0*D
+   
     else:
         raise NotImplementedError("Method not implemented. Pick one of the following: 'centered', 'upwind', 'hybrid'")
+    
+    
+    
     a_P = a_W + a_E
-
     matrix_A = np.diag(np.repeat(-a_W,n-1),-1) + \
                np.diag(np.repeat(a_P,n),0) + \
                np.diag(np.repeat(-a_E,n-1),1)
-    matrix_A[0,0]   = a_E + S_p_left
-    matrix_A[-1,-1] = a_W + S_p_right
+    
+    
+
+    matrix_A[0, 0] = a_E + S_p_left
+    matrix_A[-1, -1] = a_W + S_p_right
+    
 
     # Make source vector
     vector_b = np.zeros(n)
@@ -76,7 +83,7 @@ if __name__ == "__main__":
         return phi_0 + (phi_L - phi_0) * (np.exp(rho*u*x/Gamma)-1) / (np.exp(rho*u*length/Gamma) -1)
    
     # GRID GENERATION
-    num_cells = 5              #[-]
+    num_cells = 16              #[-]
     dx = length / (num_cells)  #[m]
     x_locations = np.linspace(0.5*dx,(num_cells-0.5)*dx,num_cells)
     
@@ -130,4 +137,5 @@ if __name__ == "__main__":
     
     ax.set_xscale("log")
     ax.set_yscale("log")
+    
     
