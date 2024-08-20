@@ -1,19 +1,16 @@
-# # MECH6480 - Finite volume methods
-# ## Week 03 
-# 
-# ### Tutorial helper
-#
-# Author: @TravisMitchell - t.mitchell@uq.edu.au
-# 
+
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
+import os
+from git import Repo
 
 def generate_matrix_dirichlet(n,dx,convective_flux, diffusive_conductance, boundary_left, boundary_right):
     """ Generate solution matrix for the FVM """
-    raise NotImplementedError("Implement this based on your discretisation")
-    a_WW = 
-    a_W = 
-    a_E = 
+    
+    a_WW = -1/8 * F
+    a_W = D + 6/8 * F
+    a_E = D - 3/8 * F
     a_P = a_W + a_E + a_WW
 
     # In this case, our coefficients are constant for all internal cells
@@ -23,25 +20,25 @@ def generate_matrix_dirichlet(n,dx,convective_flux, diffusive_conductance, bound
                np.diag(np.repeat(a_P,n),0) +\
                np.diag(np.repeat(-a_E,n-1),1)
     
-    S_p_left  = 
-    S_p_right = 
-    
+    S_p_left  = - (8/3 * D + F)
+    S_p_right = - (8/3 * D - F)
+
     # Left boundary CV
-    matrix_A[0,0] = 
-    matrix_A[0,1] = 
+    matrix_A[0,0] = a_E + S_p_left
+    matrix_A[0,1] =- a_E
 
     # One CV in from left boundary CV
-    matrix_A[1,0] = 
-    matrix_A[1,2] = 
-    matrix_A[1,1] = 
+    matrix_A[1,0] = - a_W 
+    matrix_A[1,2] = - a_E
+    matrix_A[1,1] = a_P
     
     # Right boundary CV
-    matrix_A[-1,-2] = 
-    matrix_A[-1,-1] = 
+    matrix_A[-1,-2] = - a_W 
+    matrix_A[-1,-1] = a_W + S_p_right
 
     vector_b = np.zeros(n)
-    vector_b[0]  = 
-    vector_b[1]  = 
+    vector_b[0]  = S_p_left * boundary_left
+    vector_b[1]  = 0
     vector_b[-1] = S_p_right * boundary_right
     print(matrix_A)
     print(vector_b.T)
@@ -83,4 +80,18 @@ plt.plot(x, solution, 'r--')
 plt.plot(x_locations, concentration, 'b-o')
 plt.xlabel('Distance along hallway (m)')
 plt.ylabel('concentration')
+plt.show()
+
+timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+ax.annotate(timestamp, xy=(0.7, 0.95), xycoords='figure fraction', annotation_clip=False)
+
+
+try:
+    repo = Repo('.', search_parent_directories=True)
+    revsha = repo.head.object.hexsha[:8]
+    ax.annotate(f"[rev {revsha}]", xy=(0.05, 0.95), xycoords='figure fraction', annotation_clip=False)
+except Exception as e:
+    ax.annotate("[rev unknown]", xy=(0.05, 0.95), xycoords='figure fraction', annotation_clip=False)
+    print(f"Error accessing Git repository: {e}")
+    
 plt.show()
