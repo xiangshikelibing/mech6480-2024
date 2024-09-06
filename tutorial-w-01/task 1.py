@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep  2 17:01:25 2024
+Created on Thu Sep  5 11:26:37 2024
 
 @author: 13747
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
+import time  # Importing time to measure the computational time
 
 # Physical parameters
 L = 0.1  # Length of the channel (m)
@@ -44,24 +45,42 @@ u = (1 / (2 * mu) * dpdx * ((H / 2)**2 - (y - H / 2)**2))
 T = np.ones((NX, NY)) * 300  # Initial temperature in the domain (300 K)
 T_new = T.copy()
 
-# Function to update temperature field
-def update_temperature(T, T_new, u, dt, dx, dy, rho, cp, k, q_flux):
+# Function to compute x-direction flux
+def compute_x_flux(T, u, dx, k, rho, cp):
+    x_flux = np.zeros_like(T)
     for i in range(1, NX-1):
+        for j in range(NY):
+            # Convective flux
+            convective_flux = u[j] * (T[i, j] - T[i-1, j]) / dx
+            
+            # Diffusive flux
+            diffusive_flux = k * (T[i+1, j] - 2 * T[i, j] + T[i-1, j]) / dx**2
+            
+            # Total x flux
+            x_flux[i, j] = (diffusive_flux - convective_flux) / (rho * cp)
+    return x_flux
+
+# Function to compute y-direction flux
+def compute_y_flux(T, dy, k, rho, cp):
+    y_flux = np.zeros_like(T)
+    for i in range(NX):
         for j in range(1, NY-1):
-            # Diffusive term
-            diffusion_x = k * (T[i+1, j] - 2 * T[i, j] + T[i-1, j]) / dx**2
-            diffusion_y = k * (T[i, j+1] - 2 * T[i, j] + T[i, j-1]) / dy**2
+            # Diffusive flux in y direction
+            diffusive_flux = k * (T[i, j+1] - 2 * T[i, j] + T[i, j-1]) / dy**2
+            
+            # Total y flux
+            y_flux[i, j] = diffusive_flux / (rho * cp)
+    return y_flux
 
-            # Convective term
-            convection = u[j] * (T[i, j] - T[i-1, j]) / dx
-
-            # Update temperature
-            T_new[i, j] = T[i, j] + dt * ((diffusion_x + diffusion_y) / (rho * cp) - convection)
-
-        # Neumann boundary conditions (heat flux at top and bottom)
+# Function to update temperature field
+def update_temperature(T, T_new, x_flux, y_flux, dt):
+    T_new[1:-1, 1:-1] = T[1:-1, 1:-1] + dt * (x_flux[1:-1, 1:-1] + y_flux[1:-1, 1:-1])
+    
+    # Neumann boundary conditions (heat flux at top and bottom)
+    for i in range(1, NX-1):
         T_new[i, 0] = T_new[i, 1] + q_flux * dy / k
         T_new[i, -1] = T_new[i, -2] - q_flux * dy / k
-
+    
     # Neumann condition at outlet (zero gradient)
     T_new[-1, :] = T_new[-2, :]
 
@@ -71,14 +90,24 @@ def update_temperature(T, T_new, u, dt, dx, dy, rho, cp, k, q_flux):
 time_points = [5, 10, 20, 30]
 temperature_snapshots = {}
 
+start_time = time.time()  # Start the timer
+
 for n in range(nt):
-    T_new = update_temperature(T, T_new, u, dt, dx, dy, rho, cp, k, q_flux)
+    # Compute fluxes
+    x_flux = compute_x_flux(T, u, dx, k, rho, cp)
+    y_flux = compute_y_flux(T, dy, k, rho, cp)
+    
+    # Update temperature
+    T_new = update_temperature(T, T_new, x_flux, y_flux, dt)
     T = T_new.copy()
 
     # Save snapshots at specific times
     current_time = (n + 1) * dt
     if current_time in time_points:
         temperature_snapshots[current_time] = T.copy()
+
+end_time = time.time()  # End the timer
+print(f"Total computation time: {end_time - start_time:.2f} seconds")
 
 # Plot heat maps at specified times
 for time, temp_field in temperature_snapshots.items():
