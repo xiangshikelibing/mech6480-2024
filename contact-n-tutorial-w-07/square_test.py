@@ -25,16 +25,16 @@ def coons_patch_grid(north, east, south, west, niv, njv):
     for i in range(niv): points[i] = [None]*njv
     rs = np.linspace(0, 1, niv, endpoint=True)
     ss = np.linspace(0, 1, njv, endpoint=True)
-    p00 = south(0,0)
-    p10 = south(1,0)
-    p01 = north(0,0)
-    p11 = north(1,0)
+    p00 = south(0.0)
+    p10 = south(1.0)
+    p01 = north(0.0)
+    p11 = north(1.0)
     for i, r in enumerate(rs):
         for j, s in enumerate(ss):
             #first term (iw) F_i(u)
             first_term = west(s)*(1. - r) +east(s)*r
-            second_term = south(r)(1. - s) +north(r)*s
-            third_term = p00*(1. - r)(1. - s) + p10*r*(1. - s) + p01*(1. - r)*s + p11*r*s
+            second_term = south(r)*(1. - s) +north(r)*s
+            third_term = p00*(1. - r)*(1. - s) + p10*r*(1. - s) + p01*(1. - r)*s + p11*r*s
             points[i][j] = first_term + second_term - third_term
     return points
 
